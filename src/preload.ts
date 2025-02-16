@@ -1,2 +1,6 @@
-// See the Electron documentation for details on how to use preload scripts:
-// https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
+import { contextBridge, ipcRenderer } from 'electron';
+
+// Expose a safe API to the renderer process
+contextBridge.exposeInMainWorld('env', {
+  getEnv: (key: string) => ipcRenderer.invoke('get-env', key),
+});
