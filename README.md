@@ -1,5 +1,5 @@
 ## Targets:
-- [ ] Setup Cesium
+- [x] Setup Cesium
 - [ ] Make Cesium offline compatible
 - [ ] Clean up unnecessary Cesium UI
 - [ ] Read from serial ports or BLE
