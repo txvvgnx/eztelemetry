@@ -1,7 +1,7 @@
 ## Targets:
 - [x] Setup Cesium
 - [ ] Make Cesium offline compatible
-- [ ] Clean up unnecessary Cesium UI
+- [x] Clean up unnecessary Cesium UI
 - [ ] Read from serial ports or BLE
 - [ ] Flight trajectory visualization from Cesium
 - [ ] Basic/essential telemetry from ground station
@@ -15,6 +15,6 @@
 
 Vite plugin is required because Cesium needs some static assets loaded in order to work
 
-Other vite static loaders don't work because of some weird CommonJS compatibility issue (specific to Electron)
+Other vite static loaders don't work because of ESM-CommonJS incompatibility issue (specific to Electron)
 
-Webpack is really weird and crashes Cesium as soon as any Cesium-related function is called (also specific to Electron, works in the demo)
+Webpack is really weird and crashes the app as soon as any Cesium-related function is called (seems to be also specific to Electron, works in the Cesium webpack demo)

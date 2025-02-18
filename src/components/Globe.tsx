@@ -21,6 +21,11 @@ function Globe() {
 
     viewerRef.current = new Viewer("globeView", {
       terrain: Terrain.fromWorldTerrain(),
+      animation: false,
+      timeline: false,
+      homeButton: false,
+      fullscreenButton: false,
+      navigationHelpButton: false,
     });
 
     // Set location to San Francisco
