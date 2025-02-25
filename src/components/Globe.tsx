@@ -33,17 +33,17 @@ function Globe() {
     viewerRef.current.imageryLayers.removeAll();
     viewerRef.current.imageryLayers.addImageryProvider(
       new UrlTemplateImageryProvider({
-        url: "http://localhost:8080/data/world/{z}/{x}/{y}.png",
+        url: "http://localhost:8080/{z}/{x}/{y}.png",
         tilingScheme: new WebMercatorTilingScheme(),
-        maximumLevel: 8,
+        maximumLevel: 7,
       })
     );
 
     // Set location to San Francisco
     viewerRef.current.camera.flyTo({
       destination: Cartesian3.fromDegrees(
-        -103.67439864365053,
-        31.10120041019012,
+        -122.37380903635207,
+        37.61943259091336,
         400
       ),
       orientation: {
@@ -68,7 +68,7 @@ function Globe() {
 
   return (
     <>
-      <p>{cesiumKey}</p>
+      <p className="font-mono text-red-300">{cesiumKey}</p>
       <div id="globeView"></div>
     </>
   );
