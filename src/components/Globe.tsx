@@ -23,9 +23,11 @@ function Globe() {
 
     viewerRef.current = new Viewer("globeView", {
       terrain: Terrain.fromWorldTerrain(),
-      animation: false,
+      geocoder: false,
       timeline: false,
+      animation: false,
       homeButton: false,
+      sceneModePicker: false,
       fullscreenButton: false,
       navigationHelpButton: false,
     });
@@ -36,16 +38,12 @@ function Globe() {
         url: "http://localhost:8080/{z}/{x}/{y}.png",
         tilingScheme: new WebMercatorTilingScheme(),
         maximumLevel: 7,
-      })
+      }),
     );
 
     // Set location to San Francisco
     viewerRef.current.camera.flyTo({
-      destination: Cartesian3.fromDegrees(
-        -122.37380903635207,
-        37.61943259091336,
-        400
-      ),
+      destination: Cartesian3.fromDegrees(-122.37380903635207, 37.61943259091336, 400),
       orientation: {
         heading: CesiumMath.toRadians(0.0),
         pitch: CesiumMath.toRadians(-15.0),
@@ -67,10 +65,9 @@ function Globe() {
   }, [cesiumKey]);
 
   return (
-    <>
-      <p className="font-mono text-red-300">{cesiumKey}</p>
-      <div id="globeView"></div>
-    </>
+    <div className="h-full w-full">
+      <div id="globeView" className="h-full"></div>
+    </div>
   );
 }
 

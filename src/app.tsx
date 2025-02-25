@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import Globe from "./components/Globe";
+import TelemetryView from "./components/TelemetryView";
 
 const root = createRoot(document.body);
-root.render(<Globe />);
+root.render(<TelemetryView />);
