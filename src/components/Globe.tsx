@@ -1,9 +1,9 @@
-import "cesium/Build/Cesium/Widgets/widgets.css";
 import {
   Cartesian3,
-  Cesium3DTileset,
-  createOsmBuildingsAsync,
+  EllipsoidTerrainProvider,
+  ImageryProvider,
   Ion,
+  IonImageryProvider,
   Math as CesiumMath,
   Terrain,
   UrlTemplateImageryProvider,
@@ -16,42 +16,57 @@ function Globe() {
   const [cesiumKey, setCesiumKey] = useState<string>("");
 
   const viewerRef = useRef<Viewer | null>(null);
-  const tilesetRef = useRef<Cesium3DTileset | null>(null);
+  const layerProvidersRef = useRef<(ImageryProvider | number)[] | null>(null);
+  const layerIndexRef = useRef<number>(0);
+
+  const switchLayers = async () => {
+    if (!layerProvidersRef.current) return; // Do not continue if layerProviders array is undefined
+    viewerRef.current.imageryLayers.removeAll();
+
+    const provider = layerProvidersRef.current[layerIndexRef.current];
+
+    if (typeof provider == "number")
+      viewerRef.current.imageryLayers.addImageryProvider(await IonImageryProvider.fromAssetId(provider));
+    else viewerRef.current.imageryLayers.addImageryProvider(provider);
+
+    layerIndexRef.current = (layerIndexRef.current + 1) % layerProvidersRef.current.length;
+  };
 
   const cesiumViewerSetup = async () => {
     Ion.defaultAccessToken = cesiumKey;
 
     viewerRef.current = new Viewer("globeView", {
-      terrain: Terrain.fromWorldTerrain(),
+      terrainProvider: new EllipsoidTerrainProvider(),
+      // terrain: Terrain.fromWorldTerrain(),
       geocoder: false,
       timeline: false,
       animation: false,
       homeButton: false,
       sceneModePicker: false,
+      // baseLayerPicker: false,
       fullscreenButton: false,
       navigationHelpButton: false,
     });
 
-    viewerRef.current.imageryLayers.removeAll();
-    viewerRef.current.imageryLayers.addImageryProvider(
+    layerProvidersRef.current = [
       new UrlTemplateImageryProvider({
         url: "http://localhost:8080/{z}/{x}/{y}.png",
         tilingScheme: new WebMercatorTilingScheme(),
-        maximumLevel: 7,
-      }),
-    );
+        maximumLevel: 13,
+      }), // Sentinel-2 selfhost
+      3954, // Sentinel-2 asset ID
+      2, // Bing Maps Aerial asset ID
+    ];
+    await switchLayers();
 
-    // Set location to San Francisco
+    const latlng = [-31.569074650981225, 116.77287568271946];
     viewerRef.current.camera.flyTo({
-      destination: Cartesian3.fromDegrees(-122.37380903635207, 37.61943259091336, 400),
+      destination: Cartesian3.fromDegrees(latlng[1], latlng[0], 400),
       orientation: {
         heading: CesiumMath.toRadians(0.0),
         pitch: CesiumMath.toRadians(-15.0),
       },
     });
-
-    tilesetRef.current = await createOsmBuildingsAsync();
-    viewerRef.current.scene.primitives.add(tilesetRef.current);
   };
 
   useEffect(() => {
@@ -63,6 +78,18 @@ function Globe() {
   useEffect(() => {
     if (cesiumKey) cesiumViewerSetup();
   }, [cesiumKey]);
+
+  useEffect(() => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
+      if (event.key == "L" && event.shiftKey) await switchLayers();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   return (
     <div className="h-full w-full">
