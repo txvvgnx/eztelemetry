@@ -90,3 +90,6 @@ typings/
 
 # Electron-Forge
 out/
+
+simflightpath.json
+simflightpath.kml
