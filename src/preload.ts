@@ -4,3 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('env', {
   getEnv: (key: string) => ipcRenderer.invoke('get-env', key),
 });
+
+contextBridge.exposeInMainWorld('system', {
+  readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath)
+});

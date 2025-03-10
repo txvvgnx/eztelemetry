@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
+import fs from 'fs';
 import path from 'node:path';
 import dotenv from 'dotenv';
 import started from 'electron-squirrel-startup';
@@ -57,3 +58,7 @@ app.on('activate', () => {
 ipcMain.handle('get-env', (event, key: string) => {
   return process.env[key];
 });
+
+ipcMain.handle('read-file', (event, filePath: string) => {
+  return fs.readFileSync(filePath, 'utf-8');
+})
