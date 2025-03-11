@@ -209,7 +209,6 @@ function Globe() {
     const time = viewerRef.current.clock.currentTime;
     const entityPosition = pointRef.current.position.getValue(time);
     if (entityPosition) {
-      console.log(radiusRef.current);
       const offset = new HeadingPitchRange(headingRef.current, pitchRef.current, radiusRef.current);
       viewerRef.current.camera.lookAt(entityPosition, offset);
     }
