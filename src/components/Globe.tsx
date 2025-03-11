@@ -21,6 +21,15 @@ import { useEffect, useRef, useState } from "react";
 import { flightStateGlobal } from "./TelemetryView";
 import { useAtom } from "jotai";
 
+const keyMappings: KeyMapping = {
+  ArrowLeft: "left",
+  ArrowRight: "right",
+  ArrowUp: "up",
+  ArrowDown: "down",
+  Minus: "zoomout",
+  Equal: "zoomin",
+};
+
 function Globe() {
   const [cesiumKey, setCesiumKey] = useState<string>("");
   const [cesiumReady, setCesiumReady] = useState<boolean>(false);
@@ -33,9 +42,17 @@ function Globe() {
 
   const polylineRef = useRef<Entity | null>(null);
 
-  const pitchRef = useRef<number>(0);
+  const pitchRef = useRef<number>(CesiumMath.toRadians(-45));
   const headingRef = useRef<number>(0);
-  const keyMatrixRef = useRef({ left: false, right: false, up: false, down: false });
+  const radiusRef = useRef<number>(1000);
+  const keyMatrixRef = useRef<KeyMatrix>({
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+    zoomin: false,
+    zoomout: false,
+  });
 
   const layerProvidersRef = useRef<(ImageryProvider | number)[] | null>(null);
   const layerIndexRef = useRef<number>(0);
@@ -75,13 +92,13 @@ function Globe() {
     return canvas.toDataURL();
   };
 
-  const circularClamp = (value: number, max: number): number => {
-    return ((value % max) + max) % max;
+  const clamp = (val: number, min: number, max: number) => {
+    return Math.min(Math.max(val, min), max);
   };
 
   const normalizeOrientation = (val: number, isHeading: boolean) => {
     if (isHeading) return ((val % CesiumMath.TWO_PI) + CesiumMath.TWO_PI) % CesiumMath.TWO_PI;
-    else return Math.min(Math.max(val, CesiumMath.toRadians(-85)), CesiumMath.toRadians(85));
+    else return clamp(val, CesiumMath.toRadians(-85), CesiumMath.toRadians(85));
   };
 
   const cesiumViewerSetup = async () => {
@@ -170,25 +187,30 @@ function Globe() {
     polylineRef.current.polyline.positions = new ConstantProperty(updPos);
   }, [flightState, cesiumReady]);
 
-  const moveCamera = (heading: boolean, positive: boolean) => {
-    const orbitRadius = 1000;
+  const moveCamera = (heading: boolean, positive: boolean, radius = false) => {
     const rotationSpeed = 0.015;
+    const radiusChangeSpeed = 100;
 
-    let valueToChange = heading ? headingRef.current : pitchRef.current;
+    if (radius)
+      radiusRef.current = clamp(
+        radiusRef.current + (positive ? radiusChangeSpeed : -radiusChangeSpeed),
+        1,
+        20000,
+      );
+    else {
+      let valueToChange = heading ? headingRef.current : pitchRef.current;
+      valueToChange = valueToChange + (positive ? rotationSpeed : -rotationSpeed);
+      valueToChange = normalizeOrientation(valueToChange, heading);
 
-    if (positive) valueToChange += rotationSpeed;
-    else valueToChange -= rotationSpeed;
+      if (heading) headingRef.current = valueToChange;
+      else pitchRef.current = valueToChange;
+    }
 
-    valueToChange = normalizeOrientation(valueToChange, heading);
-
-    if (heading) headingRef.current = valueToChange;
-    else pitchRef.current = valueToChange;
-
-    const time = JulianDate.now();
+    const time = viewerRef.current.clock.currentTime;
     const entityPosition = pointRef.current.position.getValue(time);
     if (entityPosition) {
-      const offset = new HeadingPitchRange(headingRef.current, pitchRef.current, orbitRadius);
-
+      console.log(radiusRef.current);
+      const offset = new HeadingPitchRange(headingRef.current, pitchRef.current, radiusRef.current);
       viewerRef.current.camera.lookAt(entityPosition, offset);
     }
   };
@@ -197,28 +219,23 @@ function Globe() {
   useEffect(() => {
     const movementInterval = setInterval(() => {
       if (keyMatrixRef.current.left) moveCamera(true, true);
-
       if (keyMatrixRef.current.right) moveCamera(true, false);
-
       if (keyMatrixRef.current.up) moveCamera(false, true);
-
       if (keyMatrixRef.current.down) moveCamera(false, false);
+      if (keyMatrixRef.current.zoomin) moveCamera(false, false, true);
+      if (keyMatrixRef.current.zoomout) moveCamera(false, true, true);
     }, 10);
 
     const handleKeyDown = async (event: KeyboardEvent) => {
       if (event.key == "L" && event.shiftKey) await switchLayers();
 
-      if (event.key == "ArrowLeft") keyMatrixRef.current.left = true;
-      if (event.key == "ArrowRight") keyMatrixRef.current.right = true;
-      if (event.key == "ArrowUp") keyMatrixRef.current.up = true;
-      if (event.key == "ArrowDown") keyMatrixRef.current.down = true;
+      const keyFunction = keyMappings[event.code as keyof KeyMapping];
+      if (keyFunction) keyMatrixRef.current[keyFunction as keyof KeyMatrix] = true;
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key == "ArrowLeft") keyMatrixRef.current.left = false;
-      if (event.key == "ArrowRight") keyMatrixRef.current.right = false;
-      if (event.key == "ArrowUp") keyMatrixRef.current.up = false;
-      if (event.key == "ArrowDown") keyMatrixRef.current.down = false;
+      const keyFunction = keyMappings[event.code as keyof KeyMapping];
+      if (keyFunction) keyMatrixRef.current[keyFunction as keyof KeyMatrix] = false;
     };
 
     window.addEventListener("keydown", handleKeyDown);
