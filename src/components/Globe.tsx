@@ -16,6 +16,7 @@ import {
   ConstantProperty,
   TrackingReferenceFrame,
   HeadingPitchRange,
+  PolygonHierarchy,
 } from "cesium";
 import { useEffect, useRef, useState } from "react";
 import { flightStateGlobal } from "./TelemetryView";
@@ -39,6 +40,7 @@ function Globe() {
 
   const pointRef = useRef<Entity | null>(null);
   const positionRef = useRef<SampledPositionProperty>(new SampledPositionProperty());
+  const prevPositionsRef = useRef<LatLngAlt[]>([]);
 
   const polylineRef = useRef<Entity | null>(null);
 
@@ -180,11 +182,29 @@ function Globe() {
     if (!cesiumReady || !flightState.init) return;
 
     const newpos = Cartesian3.fromDegrees(flightState.lng, flightState.lat, flightState.altitude);
+
+    prevPositionsRef.current.push({ lat: flightState.lat, lng: flightState.lng, alt: flightState.altitude });
     positionRef.current.addSample(JulianDate.now(), newpos);
 
     const curPolylinePos = polylineRef.current.polyline.positions.getValue();
     const updPos = [...curPolylinePos, newpos];
     polylineRef.current.polyline.positions = new ConstantProperty(updPos);
+
+    if (prevPositionsRef.current.length > 1) {
+      const prevPos = prevPositionsRef.current[prevPositionsRef.current.length - 2];
+      viewerRef.current.entities.add({
+        polygon: {
+          hierarchy: new PolygonHierarchy([
+            Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, prevPos.alt),
+            newpos,
+            Cartesian3.fromDegrees(flightState.lng, flightState.lat, 0),
+            Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, 0),
+          ]),
+          material: Color.RED.withAlpha(0.5),
+          perPositionHeight: true,
+        },
+      });
+    }
   }, [flightState, cesiumReady]);
 
   const moveCamera = (heading: boolean, positive: boolean, radius = false) => {
@@ -219,8 +239,8 @@ function Globe() {
     const movementInterval = setInterval(() => {
       if (keyMatrixRef.current.left) moveCamera(true, true);
       if (keyMatrixRef.current.right) moveCamera(true, false);
-      if (keyMatrixRef.current.up) moveCamera(false, true);
-      if (keyMatrixRef.current.down) moveCamera(false, false);
+      if (keyMatrixRef.current.up) moveCamera(false, false);
+      if (keyMatrixRef.current.down) moveCamera(false, true);
       if (keyMatrixRef.current.zoomin) moveCamera(false, false, true);
       if (keyMatrixRef.current.zoomout) moveCamera(false, true, true);
     }, 10);

@@ -18,3 +18,8 @@ Vite plugin is required because Cesium needs some static assets loaded in order 
 Other vite static loaders don't work because of ESM-CommonJS incompatibility issue (specific to Electron)
 
 Webpack is really weird and crashes the app as soon as any Cesium-related function is called (seems to be also specific to Electron, works in the Cesium webpack demo)
+
+### Notes about tracking/flight trajectory:
+- Need to use `sampledPositionProperty` for Cesium to interpolate, which allows **smooth movement** between points
+- Cesium clock has to run `x` seconds behind real time, with `x` being the longest time gap between data points (in this case longer than 10Hz or 1/10th of a second) -> otherwise it will be jumpy
+- `camera.lookAt` can be used to adjust pitch, heading/yaw and distance around `trackedEntity`. Quite useful because the orientation persists.
