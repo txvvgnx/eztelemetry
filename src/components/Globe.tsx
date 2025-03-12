@@ -214,7 +214,7 @@ function Globe() {
     if (radius)
       radiusRef.current = clamp(
         radiusRef.current + (positive ? radiusChangeSpeed : -radiusChangeSpeed),
-        1,
+        2,
         20000,
       );
     else {
