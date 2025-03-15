@@ -13,7 +13,6 @@ import {
   SampledPositionProperty,
   JulianDate,
   ExtrapolationType,
-  ConstantProperty,
   TrackingReferenceFrame,
   HeadingPitchRange,
   PolygonHierarchy,
@@ -42,11 +41,9 @@ function Globe() {
   const positionRef = useRef<SampledPositionProperty>(new SampledPositionProperty());
   const prevPositionsRef = useRef<LatLngAlt[]>([]);
 
-  const polylineRef = useRef<Entity | null>(null);
-
-  const pitchRef = useRef<number>(CesiumMath.toRadians(-45));
+  const pitchRef = useRef<number>(CesiumMath.toRadians(-5));
   const headingRef = useRef<number>(0);
-  const radiusRef = useRef<number>(1000);
+  const radiusRef = useRef<number>(2000);
   const keyMatrixRef = useRef<KeyMatrix>({
     left: false,
     right: false,
@@ -110,8 +107,8 @@ function Globe() {
       terrainProvider: new EllipsoidTerrainProvider(),
       // terrain: Terrain.fromWorldTerrain(),
       geocoder: false,
-      timeline: true,
-      animation: true,
+      timeline: false,
+      animation: false,
       homeButton: false,
       sceneModePicker: false,
       baseLayerPicker: false,
@@ -151,17 +148,6 @@ function Globe() {
     });
     viewerRef.current.trackedEntity = pointRef.current;
 
-    polylineRef.current = viewerRef.current.entities.add({
-      polyline: {
-        positions: [
-          Cartesian3.fromDegrees(latlng[1], latlng[0]),
-          Cartesian3.fromDegrees(latlng[1], latlng[0]),
-        ],
-        material: Color.RED,
-        width: 1.0,
-      },
-    });
-
     setCesiumReady(true);
   };
 
@@ -186,10 +172,6 @@ function Globe() {
     prevPositionsRef.current.push({ lat: flightState.lat, lng: flightState.lng, alt: flightState.altitude });
     positionRef.current.addSample(JulianDate.now(), newpos);
 
-    const curPolylinePos = polylineRef.current.polyline.positions.getValue();
-    const updPos = [...curPolylinePos, newpos];
-    polylineRef.current.polyline.positions = new ConstantProperty(updPos);
-
     if (prevPositionsRef.current.length > 1) {
       const prevPos = prevPositionsRef.current[prevPositionsRef.current.length - 2];
       viewerRef.current.entities.add({
@@ -202,6 +184,14 @@ function Globe() {
           ]),
           material: Color.RED.withAlpha(0.5),
           perPositionHeight: true,
+        },
+      });
+
+      viewerRef.current.entities.add({
+        polyline: {
+          positions: [Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, prevPos.alt), newpos],
+          material: Color.RED,
+          width: 1.0,
         },
       });
     }

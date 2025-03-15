@@ -32,26 +32,21 @@ function TelemetryView() {
     updatedFlightState.altitude = updatedFlightState.positions[0].alt;
 
     setFlightState(updatedFlightState);
+  };
 
-    await sleep(500);
+  const simulateFlight = async () => {
+    if (!flightState.init) return;
 
-    const ufs = { ...flightState };
-    ufs.init = true;
-    ufs.positions = JSON.parse(fileData);
-    ufs.lat = ufs.positions[83].lat;
-    ufs.lng = ufs.positions[83].lng;
-    ufs.altitude = ufs.positions[83].alt;
-    setFlightState(ufs);
+    for (let i = 1; i < flightState.positions.length; i++) {
+      const updatedFlightState = { ...flightState };
+      updatedFlightState.lat = updatedFlightState.positions[i].lat;
+      updatedFlightState.lng = updatedFlightState.positions[i].lng;
+      updatedFlightState.altitude = updatedFlightState.positions[i].alt;
 
-    await sleep(500);
+      setFlightState(updatedFlightState);
 
-    const ufs2 = { ...flightState };
-    ufs2.init = true;
-    ufs2.positions = JSON.parse(fileData);
-    ufs2.lat = ufs2.positions[135].lat;
-    ufs2.lng = ufs2.positions[135].lng;
-    ufs2.altitude = ufs2.positions[135].alt;
-    setFlightState(ufs2);
+      await sleep(100);
+    }
   };
 
   useEffect(() => {
@@ -65,7 +60,15 @@ function TelemetryView() {
       <div className="flex w-full overflow-hidden">
         <main className="relative flex h-[calc(100vh-var(--topBarHeight))] max-h-full w-full">
           {/* Left half is live video or graphs/misc telemetry */}
-          <div className="h-full w-1/2"></div>
+          <div className="h-full w-1/2">
+            <button
+              className="rounded-md border-[1px] border-solid border-white p-4"
+              onClick={simulateFlight}
+              disabled={!flightState.init}
+            >
+              Simulate trajectory
+            </button>
+          </div>
 
           {/* Right half is globe/trajectory */}
           <div className="h-full w-1/2">
