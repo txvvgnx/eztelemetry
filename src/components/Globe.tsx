@@ -59,7 +59,6 @@ function Globe() {
   const switchLayers = async () => {
     if (!layerProvidersRef.current) return; // Do not continue if layerProviders array is undefined
     viewerRef.current.imageryLayers.removeAll();
-
     const provider = layerProvidersRef.current[layerIndexRef.current];
 
     if (typeof provider == "number")
@@ -116,6 +115,8 @@ function Globe() {
       navigationHelpButton: false,
     });
 
+    // UNCOMMENT THIS LINE ON OFFLINE MODE
+    layerIndexRef.current = 2;
     layerProvidersRef.current = [
       3954, // Sentinel-2 asset ID
       2, // Bing Maps Aerial asset ID
@@ -134,7 +135,7 @@ function Globe() {
     viewerRef.current.clock.currentTime = startTime.clone();
     viewerRef.current.clock.shouldAnimate = true;
 
-    const latlng = [40.88668442, -104.63798523];
+    const latlng = [31.049806, -103.547306];
     positionRef.current.forwardExtrapolationType = ExtrapolationType.HOLD;
     positionRef.current.addSample(JulianDate.now(), Cartesian3.fromDegrees(latlng[1], latlng[0]));
 
@@ -174,19 +175,8 @@ function Globe() {
 
     if (prevPositionsRef.current.length > 1) {
       const prevPos = prevPositionsRef.current[prevPositionsRef.current.length - 2];
-      viewerRef.current.entities.add({
-        polygon: {
-          hierarchy: new PolygonHierarchy([
-            Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, prevPos.alt),
-            newpos,
-            Cartesian3.fromDegrees(flightState.lng, flightState.lat, 0),
-            Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, 0),
-          ]),
-          material: Color.RED.withAlpha(0.5),
-          perPositionHeight: true,
-        },
-      });
 
+      // Draw flight line
       viewerRef.current.entities.add({
         polyline: {
           positions: [Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, prevPos.alt), newpos],
@@ -194,6 +184,20 @@ function Globe() {
           width: 1.0,
         },
       });
+
+      // // Shade area under flight line
+      // viewerRef.current.entities.add({
+      //   polygon: {
+      //     hierarchy: new PolygonHierarchy([
+      //       Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, prevPos.alt),
+      //       newpos,
+      //       Cartesian3.fromDegrees(flightState.lng, flightState.lat, 0),
+      //       Cartesian3.fromDegrees(prevPos.lng, prevPos.lat, 0),
+      //     ]),
+      //     material: Color.RED.withAlpha(0.5),
+      //     perPositionHeight: true,
+      //   },
+      // });
     }
   }, [flightState, cesiumReady]);
 
